@@ -21,6 +21,13 @@ enum ReminderStatus {
   Dismissed
 }
 
+enum CardType {
+  MasterCard
+  Visa
+  Discover
+  AmericanExpress
+}
+
 model User {
   id        Int        @id @default(autoincrement())
   email     String     @unique
@@ -34,7 +41,7 @@ model User {
 model Card {
   id        String     @id @default(uuid())
   bankName  String
-  cardType  String
+  cardType  CardType
   number    String
   limit     Float
   balance   Float
