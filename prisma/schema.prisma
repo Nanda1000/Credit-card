@@ -11,55 +11,58 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = "postgresql://postgres:postgres@localhost:5432/creditcard?schema=public"
+
 }
 
-enum reminderStatus {
+enum ReminderStatus {
   Pending
   Sent
   Dismissed
 }
 
 model User {
-  id        Int   @id @default(autoincrement())
-  email     String   @unique
+  id        Int        @id @default(autoincrement())
+  email     String     @unique
   password  String
   cards     Card[]
   reminders Reminder[]
   payments  Payment[]
-  createdAt DateTime @default(now())
+  createdAt DateTime   @default(now())
 }
 
 model Card {
-  id              String  @id @default(uuid())
-  bankName        String
-  cardType        String
-  number          String
-  limit           Float
-  balance         Float
-  dueDate         DateTime
-  userId          String
+  id        String     @id @default(uuid())
+  bankName  String
+  cardType  String
+  number    String
+  limit     Float
+  balance   Float
+  dueDate   DateTime
+  userId    Int
+  user      User       @relation(fields: [userId], references: [id])
+  payments  Payment[]
+  reminders Reminder[]
 }
 
 model Reminder {
-  id        String   @id @default(uuid())
+  id        String          @id @default(uuid())
   message   String
   dueDate   DateTime
-  status    reminderStatus   // pending, sent, dismissed
+  status    ReminderStatus
   cardId    String
-  card      Card     @relation(fields: [cardId], references: [id])
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  card      Card            @relation(fields: [cardId], references: [id])
+  userId    Int
+  user      User            @relation(fields: [userId], references: [id])
 }
 
 model Payment {
-  id        String   @id @default(uuid())
+  id        String     @id @default(uuid())
   amount    Float
-  status    String   // pending, success, failed
+  status    String     // pending, success, failed
   cardId    String
-  card      Card     @relation(fields: [cardId], references: [id])
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
+  card      Card       @relation(fields: [cardId], references: [id])
+  userId    Int
+  user      User       @relation(fields: [userId], references: [id])
+  createdAt DateTime   @default(now())
 }
-
