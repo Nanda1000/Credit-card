@@ -20,6 +20,16 @@ enum reminderStatus {
   Dismissed
 }
 
+model User {
+  id        Int   @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  cards     Card[]
+  reminders Reminder[]
+  payments  Payment[]
+  createdAt DateTime @default(now())
+}
+
 model Card {
   id              String  @id @default(uuid())
   bankName        String
@@ -35,7 +45,7 @@ model Reminder {
   id        String   @id @default(uuid())
   message   String
   dueDate   DateTime
-  status    String   // pending, sent, dismissed
+  status    reminderStatus   // pending, sent, dismissed
   cardId    String
   card      Card     @relation(fields: [cardId], references: [id])
   userId    String
@@ -52,3 +62,4 @@ model Payment {
   user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
 }
+
