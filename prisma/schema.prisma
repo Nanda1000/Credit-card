@@ -13,3 +13,42 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+enum reminderStatus {
+  Pending
+  Sent
+  Dismissed
+}
+
+model Card {
+  id              String  @id @default(uuid())
+  bankName        String
+  cardType        String
+  number          String
+  limit           Float
+  balance         Float
+  dueDate         DateTime
+  userId          String
+}
+
+model Reminder {
+  id        String   @id @default(uuid())
+  message   String
+  dueDate   DateTime
+  status    String   // pending, sent, dismissed
+  cardId    String
+  card      Card     @relation(fields: [cardId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Payment {
+  id        String   @id @default(uuid())
+  amount    Float
+  status    String   // pending, success, failed
+  cardId    String
+  card      Card     @relation(fields: [cardId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
