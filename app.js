@@ -9,4 +9,5 @@ app.use(cors());
 app.use(express.json())
 
 app.get("/", (req, res) => res.send("Backend Running"));
+app.use("")
 app.listen(5000, ()=> console.log("Server running"))

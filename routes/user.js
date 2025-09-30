@@ -1,17 +1,14 @@
 import express from "express";
 import { PrismaClient } from "@prisma/client";
 import { verifyToken } from "../middleware/auth.middleware.js";
+import { deleteUser, getUserDetails, login, signup, updateUserDetails } from "../controllers/user.controller.js";
 
-
-const prisma = new PrismaClient();
 const router = express.Router()
 
-router.get("/me", verifyToken, async(req, res)=>{
-    let user = await prisma.user.findUnique({where: {email: req.user.email}});
-    if(!user) {
-        user = await prisma.user.create({data: {email: req.user.email}});
-    }
-    res.json(user);
-});
+router.post("/signup",verifyToken, signup);
+router.get("/login",verifyToken, login);
+router.get("/login/userdetails",verifyToken, getUserDetails);
+router.put("/login/userdetails/update", verifyToken, updateUserDetails);
+router.delete("/login/delete",verifyToken, deleteUser)
 
 export default router;

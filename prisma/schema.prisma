@@ -21,6 +21,13 @@ enum ReminderStatus {
   Dismissed
 }
 
+enum BankName {
+  Barclays
+  Lloyds
+  Monzo
+  CapitalOne
+}
+
 enum CardType {
   MasterCard
   Visa
@@ -38,11 +45,21 @@ model User {
   createdAt DateTime   @default(now())
 }
 
+model UserInfo {
+  id                 Int   @id @default(autoincrement())
+  email              String
+  password           String
+  firstname          String
+  lastname           String
+  mobilenumber       Int
+}
+
 model Card {
   id        String     @id @default(uuid())
-  bankName  String
+  bankName  BankName
   cardType  CardType
-  number    String
+  cardNumber    String
+  currency      String
   limit     Float
   balance   Float
   dueDate   DateTime
@@ -67,6 +84,9 @@ model Payment {
   id        String     @id @default(uuid())
   amount    Float
   status    String     // pending, success, failed
+  cardBank  BankName
+  idempotencyKey String
+  currency  String
   cardId    String
   card      Card       @relation(fields: [cardId], references: [id])
   userId    Int
