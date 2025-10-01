@@ -6,9 +6,9 @@ const reminderRouter = express.Router();
 
 
 //payment reminder
-reminderRouter.post("/payment-reminder", paymentMake);
+reminderRouter.post("/reminders", paymentMake);
 //due date notification
-reminderRouter.post("/due-date-notification", dueDate);
+reminderRouter.post("/reminders/due-date-notification", dueDate);
 //payment made
 
 

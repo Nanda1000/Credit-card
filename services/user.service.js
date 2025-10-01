@@ -1,7 +1,8 @@
 import { prisma } from "../database/prisma.js";
 
+
 // Signup
-export const signupUser = {async findOrCreateByFirebase(firebasepayload){
+export async function signupUser(firebasepayload){
   const { uid, email, password, firstname, lastname, mobilenumber, country } = firebasepayload;
 
   const existingByNumber = await prisma.user.findUnique({
@@ -21,14 +22,13 @@ export const signupUser = {async findOrCreateByFirebase(firebasepayload){
   }
 
   return prisma.user.create({
-    data: { uid, email, password, firstname, lastname, mobilenumber, country },
+    data: { uid, email, firstname, lastname, mobilenumber, country },
   });
-}};
+};
 
 // Login
-export const loginUser = {
-  async findOrCreateByFirebase(firebasepayload) {
-    const { uid } = firebasepayload;
+export async function loginUser(firebasepayload) {
+  const { uid } = firebasepayload;
     const user = await prisma.user.findUnique({
       where: { firebaseUid: uid },
     });
@@ -38,12 +38,11 @@ export const loginUser = {
     }
 
     return user; // just return the user, no need to re-create
-  }
 };
 
 // Get user details
-export const getUserDetailsById = {async findOrCreateByFirebase(firebasepayload){
-    const {uid} = firebasepayload;
+export async function getUserDetailsById(firebasepayload) {
+    const { uid } = firebasepayload;
     const user = await prisma.user.findUnique({
       where: { firebaseUid: uid },
     });
@@ -53,11 +52,11 @@ export const getUserDetailsById = {async findOrCreateByFirebase(firebasepayload)
     }
 
     return user
-}};
+};
 
 // Update user details
-export const updateUserDetailsById = {async findOrCreateByFirebase(firebasepayload){
-    const {uid, email, password, firstname, lastname, mobilenumber, country} = firebasepayload;
+export async function updateUserDetailsById(firebasepayload) {
+    const { uid, email, firstname, lastname, mobilenumber, country } = firebasepayload;
     const user = await prisma.user.findUnique({
       where: { firebaseUid: uid },
     });
@@ -66,13 +65,13 @@ export const updateUserDetailsById = {async findOrCreateByFirebase(firebasepaylo
       throw new Error("User not found");
     }
 
-    const updateUser = await prisma.user.update({data: {email, password, firstname, lastname, mobilenumber, country}});
+    const updateUser = await prisma.user.update({data: {email, firstname, lastname, mobilenumber, country}});
     return updateUser;
-}};
+};
 
 // Delete user
-export const deleteUserById = async (id) => {
-    const {uid} = firebasepayload;
+export async function deleteUserById(id){
+    const { uid } = firebasepayload;
     const user = await prisma.user.findUnique({
       where: { firebaseUid: uid },
     });

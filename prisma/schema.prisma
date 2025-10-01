@@ -55,19 +55,42 @@ model UserInfo {
 }
 
 model Card {
-  id        String     @id @default(uuid())
-  bankName  BankName
-  cardType  CardType
-  cardNumber    String
-  currency      String
-  limit     Float
-  balance   Float
-  dueDate   DateTime
-  userId    Int
-  user      User       @relation(fields: [userId], references: [id])
-  payments  Payment[]
-  reminders Reminder[]
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Core details
+  bankName          String?
+  cardType          String?          // e.g., credit/debit
+  cardNetwork       String?          // e.g., VISA, Mastercard
+  cardName          String?          // display_name from TrueLayer
+  nameOnCard        String?          // name_on_card
+  maskedNumber      String?          // masked/stored card number
+  lastFour          String?          // partial_card_number
+
+  // Validity
+  validFrom         DateTime?
+  validTo           DateTime?
+
+  // Financial data
+  currency          String? 
+  creditLimit       Float? 
+  balance           Float?           // current balance
+  availableBalance  Float? 
+  lastStatementBal  Float?
+  lastStatementDate DateTime?
+
+  // Payments
+  dueAmount         Float?
+  dueDate           DateTime?
+
+  // Provider
+  providerId        String?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
+
 
 model Reminder {
   id        String          @id @default(uuid())
@@ -86,6 +109,7 @@ model Payment {
   status    String     // pending, success, failed
   cardBank  BankName
   idempotencyKey String
+  redirectUrl String
   currency  String
   cardId    String
   card      Card       @relation(fields: [cardId], references: [id])

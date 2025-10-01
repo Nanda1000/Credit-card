@@ -3,14 +3,17 @@ import * as cardService from "../services/card.service.js";
 // Add new card
 export const addCard = async (req, res, next) => {
   try {
-    const { userId, bankName, cardType, cardNumber, limit, balance } = req.body;
-
-    const newCard = await cardService.createCard(userId, {
-      bankName,
-      cardType,
-      cardNumber,
-      limit,
-      balance,
+    const {userId} = req.params;
+    const newCard = await cardService.getCreditCard(userId, {
+      cardNetwork, 
+      type,
+      curr,
+      cardname,
+      name,
+      lastfour,
+      validfrom,
+      validto,
+      prov
     });
 
     res.status(201).json(newCard);
@@ -25,11 +28,12 @@ export const addCard = async (req, res, next) => {
 // Card utilization
 export const getUtilization = async (req, res, next) => {
   try {
-    const { cardNumber } = req.body;
-
-    const card = await cardService.getCardById(cardNumber);
-    if (!card) {
-      return res.status(404).json({ error: "No card found under these details" });
+    const cardId = req.params.id;
+    const userId = req.user.id;
+  
+    const card = await cardService.getCardById(cardId);
+    if (!card || card.userId !== userId) {
+      return res.status(404).json({ error: "This card does not belong to the user" });
     }
 
     const utilization = cardService.calculateUtilization(card);
@@ -42,13 +46,13 @@ export const getUtilization = async (req, res, next) => {
 // Get card details
 export const getCard = async (req, res, next) => {
   try {
-    const { cardNumber } = req.body;
-
-    const card = await cardService.getCardById(cardNumber);
-    if (!card) {
-      return res.status(404).json({ error: "No card found under these details" });
+    const cardId = req.params.id;
+    const userId = req.user.id;
+  
+    const card = await cardService.getCardById(cardId);
+    if (!card || card.userId !== userId) {
+      return res.status(404).json({ error: "This card does not belong to the user" });
     }
-
     res.json(card);
   } catch (err) {
     next(err);
@@ -59,10 +63,12 @@ export const getCard = async (req, res, next) => {
 export const updateCard = async (req, res, next) => {
   try {
     const { bankName, cardType, cardNumber, limit, balance } = req.body;
-
-    const card = await cardService.getCardById(cardNumber);
-    if (!card) {
-      return res.status(404).json({ error: "No card found under this card number to update" });
+    const cardId = req.params.id;
+    const userId = req.user.id;
+  
+    const card = await cardService.getCardById(cardId);
+    if (!card || card.userId !== userId) {
+      return res.status(404).json({ error: "This card does not belong to the user" });
     }
 
     const updatedCard = await cardService.updateCard(cardNumber, {
@@ -81,14 +87,15 @@ export const updateCard = async (req, res, next) => {
 // Delete card
 export const deleteCard = async (req, res, next) => {
   try {
-    const { cardNumber } = req.body;
-
-    const card = await cardService.getCardById(cardNumber);
-    if (!card) {
-      return res.status(404).json({ error: "No card found under this card number to delete" });
+    const cardId = req.params.id;
+    const userId = req.user.id;
+  
+    const card = await cardService.getCardById(cardId);
+    if (!card || card.userId !== userId) {
+      return res.status(404).json({ error: "This card does not belong to the user" });
     }
 
-    await cardService.deleteCard(cardNumber);
+    await cardService.deleteCard(cardId);
     res.status(204).send(); // 204 = No Content
   } catch (err) {
     next(err);
@@ -108,3 +115,19 @@ export const getAllCards = async (req, res, next)=>{
     next(err);
   }
 };
+
+// get balance data
+export const getcardBalance = async(req, res, next)=>{
+  try{
+    const {userId} = req.params;
+    const getCardBalance = await cardService.getAllBalanceData(userId);
+    if(!getCardBalance) {
+      return res.status(404).json({error: "No data acquired from the server"});
+    }
+    res.json(getCardBalance);
+  }catch(err){
+    next(err);
+  }
+};
+
+

@@ -5,10 +5,10 @@ import { deleteUser, getUserDetails, login, signup, updateUserDetails } from "..
 
 const router = express.Router()
 
-router.post("/signup",verifyToken, signup);
-router.get("/login",verifyToken, login);
-router.get("/login/userdetails",verifyToken, getUserDetails);
-router.put("/login/userdetails/update", verifyToken, updateUserDetails);
-router.delete("/login/delete",verifyToken, deleteUser)
+router.post("/users/me",verifyToken, signup);
+router.get("/users/me",verifyToken, login);
+router.get("/users/me/details",verifyToken, getUserDetails);
+router.put("/users/me/details/update", verifyToken, updateUserDetails);
+router.delete("/users/me/delete",verifyToken, deleteUser)
 
 export default router;

@@ -4,10 +4,10 @@ import express from "express";
 
 const cardRouter = express.Router();
 
-cardRouter.post("/api/add", addCard);
-cardRouter.get("/get", getCard);
-cardRouter.put("/update", updateCard);
-cardRouter.post("/utilization", getUtilization);
-cardRouter.delete("/delete", deleteCard);
+cardRouter.post("/cards", addCard);
+cardRouter.get("/cards/:id", getCard);
+cardRouter.put("/cards/:id", updateCard);
+cardRouter.post("/cards/:id/utilization", getUtilization);
+cardRouter.delete("/cards/:id", deleteCard);
 
 export default cardRouter;
