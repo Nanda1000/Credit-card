@@ -39,6 +39,9 @@ model User {
   id        Int        @id @default(autoincrement())
   email     String     @unique
   password  String
+  accessToken String
+  refreshToken  String
+  tokenexpiry   DateTime
   cards     Card[]
   reminders Reminder[]
   payments  Payment[]
@@ -55,41 +58,23 @@ model UserInfo {
 }
 
 model Card {
-  id                String   @id @default(cuid())
-  userId            String
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Core details
-  bankName          String?
-  cardType          String?          // e.g., credit/debit
-  cardNetwork       String?          // e.g., VISA, Mastercard
-  cardName          String?          // display_name from TrueLayer
-  nameOnCard        String?          // name_on_card
-  maskedNumber      String?          // masked/stored card number
-  lastFour          String?          // partial_card_number
-
-  // Validity
-  validFrom         DateTime?
-  validTo           DateTime?
-
-  // Financial data
-  currency          String? 
-  creditLimit       Float? 
-  balance           Float?           // current balance
-  availableBalance  Float? 
-  lastStatementBal  Float?
-  lastStatementDate DateTime?
-
-  // Payments
-  dueAmount         Float?
-  dueDate           DateTime?
-
-  // Provider
-  providerId        String?
-
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id           String   @id @default(cuid())
+  userId       String
+  bankName     String?
+  cardType     String?
+  cardNetwork  String?
+  displayName  String?
+  nameOnCard   String?
+  maskedNumber String?   // fully masked (**** **** **** 1234)
+  lastFour     String?   // last 4 digits for quick lookup
+  providerId   String?   // TrueLayer provider id
+  accountId    String?   // TrueLayer account/card id
+  validFrom    DateTime?
+  validTo      DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
+
 
 
 model Reminder {

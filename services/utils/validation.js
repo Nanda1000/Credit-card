@@ -18,4 +18,19 @@ export const validationutils = {
     maskCardNumber(cardNumber) {
         return cardNumber.slice(-4).padStart(cardNumber.length, '*');
     },
+
+    isValidDate(validto) {
+        const [month, year] = validto.split('/').map(Number);
+        if (!month || !year || month < 1 || month > 12) return false;
+        const expiry = new Date();
+        const validyear = expiry.getFullYear();
+        const validmonth = expiry.getMonth(); // zero-based
+        return year > validyear || (year === validyear && month - 1 >= validmonth);
+    },
+
+    isPositiveNumber(value) {
+        return typeof value === 'number' && value >= 0;
+    },
+    
+
 };

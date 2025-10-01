@@ -3,9 +3,21 @@ import * as cardService from "../services/card.service.js";
 // Add new card
 export const addCard = async (req, res, next) => {
   try {
-    const {userId} = req.params;
+    const { userId } = req.params;
+    const {
+      cardNetwork,
+      type,
+      curr,
+      cardname,
+      name,
+      lastfour,
+      validfrom,
+      validto,
+      prov
+    } = req.body;
+
     const newCard = await cardService.getCreditCard(userId, {
-      cardNetwork, 
+      cardNetwork,
       type,
       curr,
       cardname,
@@ -18,10 +30,7 @@ export const addCard = async (req, res, next) => {
 
     res.status(201).json(newCard);
   } catch (err) {
-    if (err.message.includes("already added")) {
-      return res.status(409).json({ error: err.message });
-    }
-    next(err);
+    next(err); // ✅ handled by central error handler
   }
 };
 
@@ -30,13 +39,10 @@ export const getUtilization = async (req, res, next) => {
   try {
     const cardId = req.params.id;
     const userId = req.user.id;
-  
-    const card = await cardService.getCardById(cardId);
-    if (!card || card.userId !== userId) {
-      return res.status(404).json({ error: "This card does not belong to the user" });
-    }
 
+    const card = await cardService.getCardById(cardId, userId); // ✅ ownership checked
     const utilization = cardService.calculateUtilization(card);
+
     res.json({ utilization });
   } catch (err) {
     next(err);
@@ -48,11 +54,8 @@ export const getCard = async (req, res, next) => {
   try {
     const cardId = req.params.id;
     const userId = req.user.id;
-  
-    const card = await cardService.getCardById(cardId);
-    if (!card || card.userId !== userId) {
-      return res.status(404).json({ error: "This card does not belong to the user" });
-    }
+
+    const card = await cardService.getCardById(cardId, userId); // ✅ ownership checked
     res.json(card);
   } catch (err) {
     next(err);
@@ -65,11 +68,9 @@ export const updateCard = async (req, res, next) => {
     const { bankName, cardType, cardNumber, limit, balance } = req.body;
     const cardId = req.params.id;
     const userId = req.user.id;
-  
-    const card = await cardService.getCardById(cardId);
-    if (!card || card.userId !== userId) {
-      return res.status(404).json({ error: "This card does not belong to the user" });
-    }
+
+    // ✅ ownership check
+    await cardService.getCardById(cardId, userId);
 
     const updatedCard = await cardService.updateCard(cardNumber, {
       bankName,
@@ -89,45 +90,45 @@ export const deleteCard = async (req, res, next) => {
   try {
     const cardId = req.params.id;
     const userId = req.user.id;
-  
-    const card = await cardService.getCardById(cardId);
-    if (!card || card.userId !== userId) {
-      return res.status(404).json({ error: "This card does not belong to the user" });
-    }
+
+    // ✅ ownership check
+    await cardService.getCardById(cardId, userId);
 
     await cardService.deleteCard(cardId);
-    res.status(204).send(); // 204 = No Content
+    res.status(204).send(); // No Content
   } catch (err) {
     next(err);
   }
 };
 
-// Get all cards
-export const getAllCards = async (req, res, next)=>{
-  try{
-    const {userId} = req.params
-    const getCards = await cardService.getCardsByUser(userId);
-    if(!getCards) {
-      return res.status(404).json({error: "No cards associated with this user"})
+// Get all cards by user
+export const getAllCards = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const cards = await cardService.getCardsByUser(userId);
+
+    if (!cards || cards.length === 0) {
+      return res.status(404).json({ error: "No cards associated with this user" });
     }
-    res.json(getCards);
-  }catch(err){
+
+    res.json(cards);
+  } catch (err) {
     next(err);
   }
 };
 
-// get balance data
-export const getcardBalance = async(req, res, next)=>{
-  try{
-    const {userId} = req.params;
-    const getCardBalance = await cardService.getAllBalanceData(userId);
-    if(!getCardBalance) {
-      return res.status(404).json({error: "No data acquired from the server"});
+// Get all balance data
+export const getCardBalance = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const balances = await cardService.getAllBalanceData(userId);
+
+    if (!balances) {
+      return res.status(404).json({ error: "No balance data available" });
     }
-    res.json(getCardBalance);
-  }catch(err){
+
+    res.json(balances);
+  } catch (err) {
     next(err);
   }
 };
-
-
