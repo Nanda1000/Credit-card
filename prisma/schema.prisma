@@ -1,8 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// This is your Prisma schema file
+// Learn more at: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
@@ -12,9 +9,11 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = "postgresql://postgres:postgres@localhost:5432/creditcard?schema=public"
-
 }
 
+//
+// ---------- ENUMS ----------
+//
 enum ReminderStatus {
   Pending
   Sent
@@ -35,71 +34,85 @@ enum CardType {
   AmericanExpress
 }
 
+//
+// ---------- MODELS ----------
+//
+
 model User {
-  id        Int        @id @default(autoincrement())
-  email     String     @unique
-  password  String
-  accessToken String
+  id            Int        @id @default(autoincrement())
+  email         String     @unique
+  password      String
+  accessToken   String
   refreshToken  String
   tokenexpiry   DateTime
-  cards     Card[]
-  reminders Reminder[]
-  payments  Payment[]
-  createdAt DateTime   @default(now())
+  cards         Card[]
+  reminders     Reminder[]
+  payments      Payment[]
+  createdAt     DateTime   @default(now())
 }
 
 model UserInfo {
-  id                 Int   @id @default(autoincrement())
-  email              String
-  password           String
-  firstname          String
-  lastname           String
-  mobilenumber       Int
+  id            Int    @id @default(autoincrement())
+  email         String
+  password      String
+  firstname     String
+  lastname      String
+  mobilenumber  String   // changed from Int → String (to handle leading 0s, country codes)
 }
 
 model Card {
-  id           String   @id @default(cuid())
-  userId       String
-  bankName     String?
-  cardType     String?
-  cardNetwork  String?
-  displayName  String?
-  nameOnCard   String?
-  maskedNumber String?   // fully masked (**** **** **** 1234)
-  lastFour     String?   // last 4 digits for quick lookup
-  providerId   String?   // TrueLayer provider id
-  accountId    String?   // TrueLayer account/card id
-  validFrom    DateTime?
-  validTo      DateTime?
-  paymentDueDate DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id                  String     @id @default(cuid())
+  userId              Int        // changed from String → Int to match User.id
+  user                User       @relation(fields: [userId], references: [id])
+  bankName            BankName?
+  cardType            CardType?
+  cardNetwork         String?
+  displayName         String?
+  nameOnCard          String?
+  maskedNumber        String?   // **** **** **** 1234
+  lastFour            String?   // quick lookup
+  providerId          String?   // TrueLayer provider id
+  accountId           String?   // TrueLayer account/card id
+  creditLimit         Float?
+  availableBalance    Float?
+  lastStatementBalance Float?
+  lastStatementDate   DateTime?
+  dueAmount           Float?
+  dueDate             DateTime?
+  validFrom           DateTime?
+  validTo             DateTime?
+  paymentDueDate      DateTime?
+  reminders           Reminder[]
+  payments            Payment[]
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 }
 
-
-
 model Reminder {
-  id        String          @id @default(uuid())
-  message   String
-  dueDate   DateTime
-  status    ReminderStatus
-  cardId    String
-  card      Card            @relation(fields: [cardId], references: [id])
-  userId    Int
-  user      User            @relation(fields: [userId], references: [id])
+  id           String          @id @default(uuid())
+  message      String
+  dueDate      DateTime
+  reminderDate DateTime        // when reminder should trigger
+  notifyVia    String[]        // ["email", "sms"]
+  sent         Boolean         @default(false)
+  status       ReminderStatus
+  cardId       String
+  card         Card            @relation(fields: [cardId], references: [id])
+  userId       Int
+  user         User            @relation(fields: [userId], references: [id])
 }
 
 model Payment {
-  id        String     @id @default(uuid())
-  amount    Float
-  status    String     // pending, success, failed
-  cardBank  BankName
+  id             String     @id @default(uuid())
+  amount         Float
+  status         String     // pending, success, failed
+  cardBank       BankName
   idempotencyKey String
-  redirectUrl String
-  currency  String
-  cardId    String
-  card      Card       @relation(fields: [cardId], references: [id])
-  userId    Int
-  user      User       @relation(fields: [userId], references: [id])
-  createdAt DateTime   @default(now())
+  redirectUrl    String
+  currency       String
+  cardId         String
+  card           Card       @relation(fields: [cardId], references: [id])
+  userId         Int
+  user           User       @relation(fields: [userId], references: [id])
+  createdAt      DateTime   @default(now())
 }

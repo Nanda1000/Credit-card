@@ -60,7 +60,7 @@ export const cardService = {
   async getCardsByUser(userId) {
     if (!userId) {
     throw new Error("User ID is required");
-  }
+    }
     return prisma.card.findMany({
       where: { userId },
     });
@@ -107,6 +107,20 @@ export const cardService = {
     const data = response.results?.[0];
     if (!data) return null;
 
+    await prisma.card.update({
+      where: { id: card.id },
+      data: {
+        availableBalance: data.available,
+        currency: data.currency,
+        creditlimit: data.credit_limit,
+        lastStatementBalance: data.last_statement_balance,
+        lastStatementDate: data.last_statement_date,
+        dueAmount: data.payment_due,
+        dueDate: data.payment_due_date,
+      }
+    });
+
+
     return {
       availableBalance: data.available,
       currency: data.currency,
@@ -116,6 +130,8 @@ export const cardService = {
       dueAmount: data.payment_due,
       dueDate: data.payment_due_date,
     };
+
+    
   },
 
   /**
@@ -139,6 +155,22 @@ export const cardService = {
     const response = await cardData.singleCard({ accountId: card.accountId });
     const data = response.results?.[0];
     if (!data) return null;
+
+    await prisma.card.update({
+      where: { id: card.id },
+      data: {
+        cardNetwork: data.card_network,
+        cardType: data.card_type,
+        currency: data.currency,
+        displayName: data.display_name,
+        nameOnCard: data.name_on_card,
+        lastFour: data.partial_card_number,
+        validFrom: data.valid_from,
+        validTo: data.valid_to,
+        providerId: data.provider.provider_id,
+      }
+    });
+
 
     return {
       cardNetwork: data.card_network,
