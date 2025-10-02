@@ -71,6 +71,7 @@ model Card {
   accountId    String?   // TrueLayer account/card id
   validFrom    DateTime?
   validTo      DateTime?
+  paymentDueDate DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 }
