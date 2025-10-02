@@ -1,5 +1,7 @@
 import axios from "axios";
-import prisma from "../prisma/client.js"; // assuming you have a prisma client
+import prisma from "../prisma/client.js"; 
+import { cardData } from "./carddata.service.js";
+
 
 export const reminder = {
     /**
@@ -17,20 +19,20 @@ export const reminder = {
             throw new Error("Unauthorized access to this card");
         }
 
-        // Step 3: Either return DB due date (preferred) or refresh from provider
-        let dueDate = card.dueDate;
-
-        // If you want to sync with TrueLayer:
+        let dueDate = card.paymentDueDate;
         if (!dueDate) {
-            const providerResp = await axios.get(
-                `https://api.truelayer.com/data/v1/cards/${card.providerCardId}`,
-                { headers: { Authorization: `Bearer ${process.env.TRUELAYER_ACCESS_TOKEN}` } }
-            );
-            dueDate = providerResp.data?.results?.[0]?.due_date;
+            const response = await cardData.balanceCard({ accountId: cardId, userId });
+            const data = response.results?.[0];
+            if (!data) return null;
+            
+            // Step 3: Either return DB due date (preferred) or refresh from provider
+            dueDate = data.payment_due_date;
+            await prisma.card.update({
+                where: { id: cardId },
+                data: { paymentDueDate: dueDate },
+            });
         }
-
-        if (!dueDate) throw new Error("Due date unavailable");
-        return new Date(dueDate);
+        return dueDate;
     },
 
     /**
@@ -38,59 +40,83 @@ export const reminder = {
      */
     async sendReminderEmail(userEmail, cardId, dueDate) {
         console.log(
-            `📧 Sending reminder to ${userEmail} for card ${cardId} with due date ${dueDate}`
+            `Sending reminder to ${userEmail} for card ${cardId} with due date ${dueDate}`
         );
         // TODO: replace with sendgrid/mailgun call
     },
 
+
     /**
      * Schedule reminder (store job in DB or push to queue)
      */
-    async scheduleReminder(cardId, userId, userEmail) {
-        const dueDate = await this.paymentDueDate(cardId, userId);
-        const reminderDate = new Date(dueDate);
-        reminderDate.setDate(reminderDate.getDate() - 3);
+    async scheduleAllReminders() {
+    // Step 1: Get all cards with dueDate
+    const cards = await prisma.card.findMany({
+        where: { paymentDueDate: { not: null } },
+        include: { user: true },
+    });
 
-        // Store in DB for scheduler to pick up
-        await prisma.reminder.create({
-            data: {
-                userId,
-                cardId,
-                dueDate,
-                reminderDate,
-                notifyVia: ["email"], // could extend with push/sms
-            },
-        });
+    // Step 2: Loop through cards
+    for (const card of cards) {
+        const dueDate = new Date(card.paymentDueDate);
+        const reminderOffsets = [-3, -1, 0, 1]; // 3d before, 1d before, same day, 1d after
 
-        console.log(`✅ Reminder scheduled on ${reminderDate} for user ${userEmail}`);
+        for (const offset of reminderOffsets) {
+            const reminderDate = new Date(dueDate);
+            reminderDate.setDate(dueDate.getDate() + offset);
+
+            // Step 3: Avoid duplicates
+            const existing = await prisma.reminder.findFirst({
+                where: { cardId: card.id, reminderDate },
+            });
+            if (existing) continue;
+
+            // Step 4: Save reminder
+            await prisma.reminder.create({
+                data: {
+                    userId: card.userId,
+                    cardId: card.id,
+                    dueDate,
+                    reminderDate,
+                    notifyVia: ["email"],
+                    sent: false,
+                },
+            });
+
+            console.log(
+                `Reminder created for ${card.user.email} - Card ${card.id} on ${reminderDate}`
+            );
+        }
+    }
     },
+
+
 
     /**
      * Check all reminders due today and send notifications
      * Should be triggered daily by cron/queue worker
      */
     async checkAndSendReminders() {
-        const today = new Date();
+    const today = new Date();
+    const start = new Date(today.setHours(0, 0, 0, 0));
+    const end = new Date(today.setHours(23, 59, 59, 999));
 
-        // Fetch reminders due today
-        const reminders = await prisma.reminder.findMany({
-            where: {
-                reminderDate: {
-                    lte: today, // reminder date <= today
-                },
-                sent: false,
-            },
-            include: { user: true, card: true },
+    const reminders = await prisma.reminder.findMany({
+        where: {
+            reminderDate: { gte: start, lte: end },
+            sent: false,
+        },
+        include: { user: true, card: true },
+    });
+
+    for (const r of reminders) {
+        await this.sendReminderEmail(r.user.email, r.cardId, r.dueDate);
+
+        await prisma.reminder.update({
+            where: { id: r.id },
+            data: { sent: true },
         });
+    }
+    }
 
-        for (const r of reminders) {
-            await this.sendReminderEmail(r.user.email, r.cardId, r.dueDate);
-
-            // Mark as sent
-            await prisma.reminder.update({
-                where: { id: r.id },
-                data: { sent: true },
-            });
-        }
-    },
 };
