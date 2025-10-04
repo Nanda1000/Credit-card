@@ -2,14 +2,12 @@ import * as cardService from "../services/card.service.js";
 import { reminder } from "../services/reminder.service.js";
 
 // Add new card
-// Add new card
 export const addCard = async (req, res, next) => {
   try {
     const { userId } = req.params;
     const {
       cardNetwork,
       cardType,
-      currency,
       displayName,
       nameOnCard,
       lastFour,
@@ -84,13 +82,11 @@ export const getCard = async (req, res, next) => {
 // Update card
 export const updateCard = async (req, res, next) => {
   try {
-    const { bankName, cardType, cardNumber, creditLimit, balance } = req.body;
+    const { creditLimit, balance } = req.body;
     const cardId = req.params.id;
     const userId = req.user.id;
 
     const updatedCard = await cardService.updateCard(cardId, userId, {
-      bankName,
-      cardType,
       creditLimit,
       balance,
     });

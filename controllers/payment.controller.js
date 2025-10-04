@@ -19,7 +19,7 @@ export const createPayment = async (req, res) => {
     });
 
     if (method === "redirect") {
-      const url = await paymentService.initiateRedirectPayment(payment.id);
+      const url = await paymentService.initiatedRedirectPayment(payment.id);
       return res.status(201).json({ redirectUrl: url });
     }
 

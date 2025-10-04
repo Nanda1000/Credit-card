@@ -70,6 +70,9 @@ export const cardService = {
    * Get single card metadata, verify ownership.
    */
   async getCardById(cardId, userId) {
+    if (!cardId || !userId) {
+      throw new Error("User ID and Card ID are required");
+    }
     const card = await prisma.card.findUnique({
       where: { id: cardId },
     });
@@ -79,9 +82,12 @@ export const cardService = {
   },
 
   /**
-   * Update static card metadata (not balances).
+   * Update static card metadata (not balances)
    */
   async updateCard(cardId, userId, update) {
+    if (!cardId || !userId || !update) {
+      throw new Error("User ID, Card ID and update data are required");
+    }
     await this.getCardById(cardId, userId); // ensure ownership
     return prisma.card.update({
       where: { id: cardId },
@@ -90,9 +96,12 @@ export const cardService = {
   },
 
   /**
-   * Delete card (metadata only).
+   * Delete card (metadata only)
    */
   async deleteCard(cardId, userId) {
+    if (!cardId || !userId) {
+      throw new Error("User ID and Card ID are required");
+    }
     await this.getCardById(cardId, userId); // ensure ownership
     return prisma.card.delete({
       where: { id: cardId },
@@ -137,8 +146,8 @@ export const cardService = {
   /**
    * Calculate utilization % (live).
    */
-  async calculateUtilization(card) {
-    const balanceData = await this.getAllBalanceData(card);
+  async calculateUtilization(cardId) {
+    const balanceData = await this.getAllBalanceData(cardId);
     if (!balanceData) return 0;
 
     const { creditLimit, availableBalance } = balanceData;

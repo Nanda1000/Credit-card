@@ -1,20 +1,38 @@
 {
   "name": "credit-card",
   "version": "1.0.0",
+  "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest --runInBand --detectOpenHandles",
+    "postinstall": "prisma generate"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
-    "@prisma/client": "^6.16.2",
+    "@prisma/client": "^6.16.3",
+    "axios": "^1.12.2",
     "bull": "^4.16.5",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
     "firebase-admin": "^13.5.0",
     "ioredis": "^5.8.0",
     "node-cron": "^4.2.1",
-    "prisma": "^6.16.2"
+    "prisma": "^6.16.3"
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.28.3",
+    "babel-jest": "^30.2.0",
+    "jest": "^30.2.0",
+    "supertest": "^7.1.4"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.js$": "babel-jest"
+    },
+    "testEnvironment": "node",
+    "verbose": true
   }
 }

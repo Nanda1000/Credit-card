@@ -9,12 +9,12 @@ export const paymentMake = async(req, res, next)=>{
         const {cardId, userId, dueDate, message, subject, email} = req.body;
         const { bankName, cardType, cardNumber, limit, balance } = req.body;
         
-        const card = await cardService.getCardById(cardNumber);
+        const card = await cardService.getCardById(cardId);
 
         if(!dueDate || !card) {
             res.status(200).json({message: "There is no due data for this card or No card found under this details"})
         }
-        await reminder.scheduleReminder(cardId, userId, email);
+        await reminder.scheduleAllReminders(cardId, userId, email);
         res.status(200).json({message: "Reminder scheduled successfully"});
     }catch(err){
         next(err);
