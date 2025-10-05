@@ -1,6 +1,5 @@
 // tests/utils/testUtils.js
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
+import { prisma } from "../../database/prisma.js";
 
 export async function seedUserWithCard() {
   const user = await prisma.user.create({
@@ -20,7 +19,7 @@ export async function seedUserWithCard() {
       cardType: "MasterCard",
       displayName: "Seeded Card",
       creditLimit: 5000,
-      balance: 3749,
+      availableBalance: 3749,
     },
   });
 

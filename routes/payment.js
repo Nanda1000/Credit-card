@@ -7,4 +7,4 @@ paymentRouter.post("/payments", createPayment);
 paymentRouter.get("/payments/:id", getPayment);
 paymentRouter.post("/payments/webhook", handleWebhook);
 
-export { paymentRouter };
+export default paymentRouter;

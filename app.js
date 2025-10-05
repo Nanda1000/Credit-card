@@ -20,5 +20,10 @@ app.use("/api", reminderRouter);
 app.use(errorHandler);
 
 app.get("/", (req, res) => res.send("Backend Running"));
-app.use("")
-app.listen(5000, ()=> console.log("Server running"))
+
+// Do not automatically start the server when running tests — tests import the app.
+if (process.env.NODE_ENV !== 'test') {
+	app.listen(5000, () => console.log("Server running"));
+}
+
+export default app;

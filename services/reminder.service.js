@@ -1,5 +1,5 @@
 import axios from "axios";
-import prisma from "../prisma/client.js"; 
+import { prisma } from "../database/prisma.js"; 
 import { cardData } from "./carddata.service.js";
 import { reminderQueue } from "../queue/reminder.queue.js";
 import * as emailservice from "../services/utils/email.service.js";
