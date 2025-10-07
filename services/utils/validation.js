@@ -1,4 +1,4 @@
-export const validationutils = {
+export const validationUtils = {
     isValidCardNumber(cardNumber) {
         let sum = 0;
         let shouldDouble = false;   

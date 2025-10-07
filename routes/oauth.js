@@ -3,8 +3,8 @@ import {redirectToTrueLayer, refreshToken, handleOAuthCallback} from "../control
 
 const authRouter = express.Router();
 
-authRouter.get("/truelayer", redirectToTrueLayer);
-authRouter.get("/truelayer/callback", handleOAuthCallback);
-authRouter.get("/truelayer/refreshtoken", refreshToken);
+authRouter.get("/truelayer/:userId", redirectToTrueLayer);
+authRouter.get("/truelayer/:userId/accesstoken", handleOAuthCallback);
+authRouter.get("/truelayer/:userId/refreshtoken", refreshToken);
 
 export default authRouter;

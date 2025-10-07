@@ -22,19 +22,31 @@ export const cardService = {
     } = cardInput;
 
     if (!validationUtils.isValidCardNumber(cardNumber)) {
-      throw new Error("Invalid card number");
+      const err = new Error("Invalid card number");
+      err.statusCode = 400;
+      throw err;
     }
 
     if (!validationUtils.isValidDate(validTo)) {
-      throw new Error("Card expired or invalid date");
+      const err = new Error("Card expired or invalid date");
+      err.statusCode = 400;
+      throw err;
     }
 
     if (!validationUtils.isPositiveNumber(accountId)) {
-      throw new Error("Invalid accountId");
+      const err = new Error("Invalid accountId");
+      err.statusCode = 400;
+      throw err;
     }
 
     const maskedNumber = validationUtils.maskCardNumber(cardNumber);
     const lastFour = cardNumber.slice(-4);
+    const parseMMYYYY = (v) => {
+      if (!v || typeof v !== 'string') return null;
+      const [m, y] = v.split('/').map(Number);
+      if (!m || !y) return null;
+      return new Date(y, m - 1, 1);
+    };
 
     return prisma.card.create({
       data: {
@@ -42,14 +54,14 @@ export const cardService = {
         bankName,
         cardType,
         cardNetwork,
-        accountId,
+        accountId: accountId !== undefined && accountId !== null ? String(accountId) : null,
         providerId,
         displayName,
         nameOnCard,
         maskedNumber,
         lastFour,
-        validFrom,
-        validTo,
+        validFrom: parseMMYYYY(validFrom),
+        validTo: parseMMYYYY(validTo),
       },
     });
   },
@@ -70,14 +82,27 @@ export const cardService = {
    * Get single card metadata, verify ownership.
    */
   async getCardById(cardId, userId) {
-    if (!cardId || !userId) {
-      throw new Error("User ID and Card ID are required");
+    if (!cardId) {
+      const err = new Error("Card ID is required");
+      err.statusCode = 400;
+      throw err;
     }
     const card = await prisma.card.findUnique({
       where: { id: cardId },
     });
-    if (!card) throw new Error("Card not found");
-    if (card.userId !== userId) throw new Error("Unauthorized");
+    if (!card) {
+      const err = new Error("Card not found");
+      err.statusCode = 404;
+      throw err;
+    }
+    // If caller provided a userId, enforce ownership
+    if (userId !== undefined && userId !== null) {
+      if (card.userId !== userId) {
+        const err = new Error("Unauthorized");
+        err.statusCode = 403;
+        throw err;
+      }
+    }
     return card;
   },
 
@@ -86,7 +111,9 @@ export const cardService = {
    */
   async updateCard(cardId, userId, update) {
     if (!cardId || !userId || !update) {
-      throw new Error("User ID, Card ID and update data are required");
+      const err = new Error("User ID, Card ID and update data are required");
+      err.statusCode = 400;
+      throw err;
     }
     await this.getCardById(cardId, userId); // ensure ownership
     return prisma.card.update({
@@ -100,7 +127,9 @@ export const cardService = {
    */
   async deleteCard(cardId, userId) {
     if (!cardId || !userId) {
-      throw new Error("User ID and Card ID are required");
+      const err = new Error("User ID and Card ID are required");
+      err.statusCode = 400;
+      throw err;
     }
     await this.getCardById(cardId, userId); // ensure ownership
     return prisma.card.delete({
@@ -111,7 +140,10 @@ export const cardService = {
   /**
    * Fetch live balance + due date from TrueLayer.
    */
-  async getAllBalanceData(card) {
+  async getAllBalanceData(cardId) {
+    const card = await prisma.card.findUnique({ where: { id: cardId } });
+    if (!card) return null;
+
     const response = await cardData.balanceCard({ accountId: card.accountId });
     const data = response.results?.[0];
     if (!data) return null;
@@ -120,19 +152,16 @@ export const cardService = {
       where: { id: card.id },
       data: {
         availableBalance: data.available,
-        currency: data.currency,
-        creditlimit: data.credit_limit,
+        creditLimit: data.credit_limit,
         lastStatementBalance: data.last_statement_balance,
-        lastStatementDate: data.last_statement_date,
+        lastStatementDate: data.last_statement_date ? new Date(data.last_statement_date) : null,
         dueAmount: data.payment_due,
-        dueDate: data.payment_due_date,
-      }
+        dueDate: data.payment_due_date ? new Date(data.payment_due_date) : null,
+      },
     });
-
 
     return {
       availableBalance: data.available,
-      currency: data.currency,
       creditLimit: data.credit_limit,
       lastStatementBalance: data.last_statement_balance,
       lastStatementDate: data.last_statement_date,
@@ -160,7 +189,10 @@ export const cardService = {
   /**
    * Fetch static credit card info from TrueLayer (not balances).
    */
-  async getCreditCardData(card) {
+  async getCreditCardData(cardId) {
+    const card = await prisma.card.findUnique({ where: { id: cardId } });
+    if (!card) return null;
+
     const response = await cardData.singleCard({ accountId: card.accountId });
     const data = response.results?.[0];
     if (!data) return null;
@@ -170,27 +202,24 @@ export const cardService = {
       data: {
         cardNetwork: data.card_network,
         cardType: data.card_type,
-        currency: data.currency,
         displayName: data.display_name,
         nameOnCard: data.name_on_card,
         lastFour: data.partial_card_number,
-        validFrom: data.valid_from,
-        validTo: data.valid_to,
-        providerId: data.provider.provider_id,
-      }
+        validFrom: data.valid_from ? new Date(data.valid_from) : null,
+        validTo: data.valid_to ? new Date(data.valid_to) : null,
+        providerId: data.provider?.provider_id,
+      },
     });
-
 
     return {
       cardNetwork: data.card_network,
       type: data.card_type,
-      currency: data.currency,
       displayName: data.display_name,
       nameOnCard: data.name_on_card,
       lastFour: data.partial_card_number,
       validFrom: data.valid_from,
       validTo: data.valid_to,
-      providerId: data.provider.provider_id,
+      providerId: data.provider?.provider_id,
     };
   },
 };

@@ -1,4 +1,6 @@
 import axios from "axios";
+import { prisma } from "../../database/prisma.js";
+
 
 const TL_AUTH_URL = "https://auth.truelayer.com";
 const CLIENT_ID = process.env.TRUELAYER_CLIENT_ID;
@@ -10,7 +12,7 @@ export const oauthService = {
     // Constructing the url
     getAuthorizationUrl() {
         const scopes = "cards balance transactions";
-        return `${TL_AUTH_URL}/?response_type=code&client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&providers=uk-ob-all&scope=${encodeURIComponent(scopes)}`;
+        return `${TL_AUTH_URL}/connect/authorize?response_type=code&client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&providers=uk-ob-all&scope=${encodeURIComponent(scopes)}`;
     },
 
     // Exchanges code for access token
@@ -57,5 +59,13 @@ export const oauthService = {
                 expires_in,
             }
         });
-    }
+    },
+
+    async getUserTokens(userId) {
+        return prisma.user.findUnique({
+            where: { id: userId },
+            select: { refresh_token: true },
+        });
+    },
+
 };

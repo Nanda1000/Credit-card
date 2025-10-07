@@ -7,9 +7,9 @@ const reminderRouter = express.Router();
 
 
 // Create reminder
-reminderRouter.post("/reminders", paymentMake);
+reminderRouter.post("/reminders/:cardId", paymentMake);
 // List reminders
-reminderRouter.get("/reminders", dueDate); // Replace with listReminders controller when available
+reminderRouter.get("/reminders/:cardId/dueDate", dueDate); // Replace with listReminders controller when available
 // Update reminder
 reminderRouter.put("/reminders/:id", rewardsOffers); // Replace with updateReminder controller when available
 // Delete reminder

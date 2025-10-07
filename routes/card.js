@@ -1,4 +1,4 @@
-import { addCard, deleteCard, getCard, getUtilization, updateCard, getAllCards, getCardBalance } from "../controllers/creditcard.controller";
+import { addCard, deleteCard, getCard, getUtilization, updateCard, getAllCards, getCardsBalance } from "../controllers/creditcard.controller.js";
 import express from "express";
 
 
@@ -6,10 +6,10 @@ const cardRouter = express.Router();
 
 cardRouter.post("/users/:userId/cards", addCard);
 cardRouter.get("/cards/:id", getCard);
-cardRouter.put("/cards/:id", updateCard);
+cardRouter.patch("/cards/:id", updateCard);
 cardRouter.get("/cards/:id/utilization", getUtilization);
 cardRouter.delete("/cards/:id", deleteCard);
 cardRouter.get("/users/:userId/cards", getAllCards);
-cardRouter.get("/users/:userId/cards/balance", getCardBalance);
+cardRouter.get("/users/:userId/cards/balance", getCardsBalance);
 
 export default cardRouter;

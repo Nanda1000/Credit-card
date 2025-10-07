@@ -3,8 +3,8 @@ import { createPayment, getPayment, handleWebhook } from "../controllers/payment
 
 const paymentRouter = express.Router();
 
-paymentRouter.post("/payments", createPayment);
+paymentRouter.post("/payments/:userid", createPayment);
 paymentRouter.get("/payments/:id", getPayment);
-paymentRouter.post("/payments/webhook", handleWebhook);
+paymentRouter.post("/payments/:id/webhook", handleWebhook);
 
 export default paymentRouter;

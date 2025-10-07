@@ -12,11 +12,24 @@ dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json())
-app.use("/api", authRouter);
-app.use("/api", router);
-app.use("/api", cardRouter);
-app.use("/api", paymentRouter);
-app.use("/api", reminderRouter);
+// Test helper: allow tests to set req.user via `user-id` header
+app.use((req, res, next) => {
+	const headerUserId = req.headers['user-id'] || req.headers['user_id'];
+	const headerPaymentId = req.headers['payment-id'] || req.headers['payment_id'];
+	if (headerUserId || headerPaymentId) {
+		// Attach a minimal user object expected by controllers
+		req.user = { id: Number(headerUserId) };
+		req.payment = {id: Number(headerPaymentId)};
+
+	}
+	next();
+});
+
+app.use(authRouter);
+app.use(router);
+app.use(cardRouter);
+app.use(paymentRouter);
+app.use(reminderRouter);
 app.use(errorHandler);
 
 app.get("/", (req, res) => res.send("Backend Running"));

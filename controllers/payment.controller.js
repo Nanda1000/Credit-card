@@ -3,37 +3,33 @@ import { paymentService } from "../services/payment.service.js";
 
 export const createPayment = async (req, res) => {
   try {
-    const { cardId, amount, currency = "GBP", method, idempotencyKey } = req.body;
+    const { cardId, amount, currency = "GBP", idempotencyKey } = req.body;
 
-    if (!["redirect", "pisp", "manual"].includes(method)) {
-      return res.status(400).json({ error: "Invalid payment method" });
-    }
-
+    // Create a local payment record
     const payment = await paymentService.createPaymentRecord({
       userId: req.user.id,
       cardId,
       amount,
       currency,
-      method,
+      method: "pisp", // always pisp for API-based flow
       idempotencyKey,
     });
 
-    if (method === "redirect") {
-      const url = await paymentService.initiatedRedirectPayment(payment.id);
-      return res.status(201).json({ redirectUrl: url });
-    }
+    // Initiate payment through TrueLayer
+    const { redirectUrl, providerPaymentId } = await paymentService.initiatePISP(payment.id);
 
-    if (method === "pisp") {
-      const resp = await paymentService.initiatePISP(payment.id);
-      return res.status(201).json({ status: "pending", provider: resp });
-    }
-
-    return res.status(201).json({ payment });
+    return res.status(201).json({
+      status: "authorization_required",
+      redirectUrl,           // frontend should redirect user here
+      providerPaymentId,     // store if needed for webhooks later
+    });
 
   } catch (err) {
+    console.error(err);
     res.status(400).json({ error: err.message });
   }
 };
+
 
 export const getPayment = async (req, res) => {
   try {

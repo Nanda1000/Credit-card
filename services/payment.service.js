@@ -5,20 +5,21 @@ export const paymentService = {async createPaymentRecord({ userId, cardId, amoun
     return prisma.payment.create({data:{userId, cardId, amount, currency, method, idempotencyKey}})
 },
 
-async initiatedRedirectPayment(paymentId) {
-    const redirectUrl = `https://api.truelayer-sandbox.com/v3/single-immediate-payments/${paymentId}`;
-    await prisma.payment.update({where:{id: paymentId}, data:{redirectUrl}});
-    return redirectUrl;
-},
-
 async initiatePISP(paymentId) {
-    // call provider API
     const providerResp = await pispService.createPayment({ paymentId });
+
+    // Extract the redirect URL from TrueLayer response
+    const redirectUrl = providerResp.authorization_flow?.actions?.next?.uri;
+
     await prisma.payment.update({
       where: { id: paymentId },
-      data: { providerPaymentId: providerResp.id },
+      data: {
+        providerPaymentId: providerResp.id,
+        redirectUrl,
+      },
     });
-    return providerResp;
+
+    return { providerPaymentId: providerResp.id, redirectUrl };
   },
 
 async getPaymentStatus(paymentId) {

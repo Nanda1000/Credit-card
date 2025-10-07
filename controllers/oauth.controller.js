@@ -9,10 +9,15 @@ export async function handleOAuthCallback(req, res, next) {
     try {
         const { code } = req.query;
         if (!code) return res.status(400).send("Authorization code is missing");
-        const tokens = await oauthService.exchangeCodeForToken(code);
         const userId = req.user?.id;
+        if (!userId) return res.status(400).send("User ID is missing");
+        const tokens = await oauthService.exchangeCodeForToken(code);
         if (userId) await oauthService.saveUserTokens(userId, tokens);
-        res.send("OAuth successful, tokens saved.");
+        res.status(200).json({
+        message: "OAuth successful, tokens saved.",
+        userId: parseInt(userId),
+        });
+
     } catch (err) {
         next(err);
     }
@@ -25,7 +30,7 @@ export async function refreshToken(req, res, next) {
         const { refresh_token } = await oauthService.getUserTokens(userId);
         const newTokens = await oauthService.refreshAccessToken(refresh_token);
         await oauthService.saveUserTokens(userId, newTokens);
-        res.send("Access token refreshed successfully.");
+        res.status(200).send("Access token refreshed successfully.");
     } catch (err) {
         next(err);
     }

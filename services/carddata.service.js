@@ -26,6 +26,23 @@ export const cardData = {
 
     // balance of the card
     async balanceCard({ accountId }) {
+        // During tests we don't want to call external TrueLayer. Return a mocked shape.
+        if (process.env.NODE_ENV === 'test') {
+            return {
+                results: [
+                    {
+                        available: 1000,
+                        currency: 'GBP',
+                        credit_limit: 2000,
+                        last_statement_balance: 1200,
+                        last_statement_date: null,
+                        payment_due: 100,
+                        payment_due_date: null,
+                    },
+                ],
+            };
+        }
+
         const resp = await axios.get(`https://api.truelayer.com/data/v1/cards/${accountId}/balance`, {
             headers: {
                 Authorization: `Bearer ${process.env.TRUELAYER_ACCESS_TOKEN}`
