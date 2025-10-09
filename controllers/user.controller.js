@@ -4,7 +4,7 @@ import * as userService from "../services/user.service.js";
 export async function getMyDetails(req, res) {
   try {
     const user = await userService.getUserById(req.user.id); // req.user comes from middleware
-    res.json(user);
+    res.status(200).json(user);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -14,7 +14,7 @@ export async function getMyDetails(req, res) {
 export async function updateMyDetails(req, res) {
   try {
     const updated = await userService.updateUser(req.user.id, req.body);
-    res.json(updated);
+    res.status(200).json(updated);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

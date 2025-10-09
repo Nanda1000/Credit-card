@@ -67,7 +67,7 @@ export const reminder = {
 
         for (const offset of reminderOffsets) {
             const reminderDate = new Date(dueDate);
-            if (offset >= 0) {
+            if (reminderDate - dueDate >= 0) {
                 reminderDate.setDate(dueDate.getDate() + offset);
 
                 // Step 3: Avoid duplicates

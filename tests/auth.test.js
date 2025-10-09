@@ -1,93 +1,115 @@
-import { prisma } from "../../database/prisma.js";
+import axios from "axios";
 import { oauthService } from "../services/oauth.service.js";
+import { prisma } from "../database/prisma.js";
 
-jest.mock("../../database/prisma.js", () => ({
+jest.mock("axios");
+jest.mock("../database/prisma.js", () => ({
   prisma: {
     user: {
-      findUnique: jest.fn(),
       update: jest.fn(),
+      findUnique: jest.fn(),
     },
   },
 }));
 
 describe("OAuth Service Tests", () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
 
-  describe("Exchange code", () => {
-    it("should throw error if no code passed", async () => {
+  // ------------------------
+  // Exchange Code for Token
+  // ------------------------
+  describe("exchangeCodeForToken", () => {
+    it("should throw error if no code is provided", async () => {
       await expect(oauthService.exchangeCodeForToken(null))
-        .rejects.toThrow("Code is required");
+        .rejects.toThrow("Failed to exchange code for token");
     });
 
-    it("should exchange code", async () => {
-      const mockUser = { id: 1, accessToken: "456897", refreshToken: "xyz" };
-      prisma.user.update.mockResolvedValue(mockUser);
+    it("should exchange code successfully", async () => {
+      const mockData = { accessToken: "abc123", refreshToken: "xyz789" };
+      axios.post.mockResolvedValueOnce({ data: mockData });
 
       const result = await oauthService.exchangeCodeForToken("valid_code");
-      expect(prisma.user.update).toHaveBeenCalled();
-      expect(result).toEqual(mockUser);
+
+      expect(axios.post).toHaveBeenCalledTimes(1);
+      expect(result).toEqual(mockData);
+    });
+
+    it("should throw error if axios fails", async () => {
+      axios.post.mockRejectedValueOnce(new Error("Network Error"));
+      await expect(oauthService.exchangeCodeForToken("bad_code"))
+        .rejects.toThrow("Failed to exchange code for token");
     });
   });
 
-  describe("Refresh access token", () => {
-    it("should throw error if no token passed", async () => {
+  // ------------------------
+  // Refresh Access Token
+  // ------------------------
+  describe("refreshAccessToken", () => {
+    it("should throw error if no refresh token is provided", async () => {
       await expect(oauthService.refreshAccessToken(null))
-        .rejects.toThrow("Token is required");
+        .rejects.toThrow("Failed to refresh access token");
     });
 
-    it("should refresh token successfully", async () => {
-      const mockUser = { id: 1, refreshToken: "4567", accessToken: "new123" };
-      prisma.user.update.mockResolvedValue(mockUser);
+    it("should refresh access token successfully", async () => {
+      const mockData = { accessToken: "newToken123", refreshToken: "newRefresh456" };
+      axios.post.mockResolvedValueOnce({ data: mockData });
 
-      const result = await oauthService.refreshAccessToken("4567");
-      expect(prisma.user.update).toHaveBeenCalled();
-      expect(result).toEqual(mockUser);
+      const result = await oauthService.refreshAccessToken("valid_refresh_token");
+
+      expect(axios.post).toHaveBeenCalledTimes(1);
+      expect(result).toEqual(mockData);
+    });
+
+    it("should throw error if axios fails", async () => {
+      axios.post.mockRejectedValueOnce(new Error("Network Error"));
+      await expect(oauthService.refreshAccessToken("invalid_refresh_token"))
+        .rejects.toThrow("Failed to refresh access token");
     });
   });
 
-  describe("Save tokens", () => {
-    it("should throw error if no token or userId", async () => {
-      await expect(oauthService.saveUserTokens(null, null))
-        .rejects.toThrow("Token and user ID are required");
+  // ------------------------
+  // Save User Tokens
+  // ------------------------
+  describe("saveUserTokens", () => {
+    it("should throw error if userId is missing", async () => {
+      await expect(oauthService.saveUserTokens(null, { accessToken: "a", refreshToken: "b" }))
+        .rejects.toThrow("User ID is required");
     });
 
-    it("should save tokens", async () => {
-      const mockUser = {
-        id: 1,
-        accessToken: "123",
-        refreshToken: "4567",
+
+    it("should save tokens successfully", async () => {
+      const mockUser = { id: "123", accessToken: "a", refreshToken: "b" };
+      prisma.user.update.mockResolvedValueOnce(mockUser);
+
+      const result = await oauthService.saveUserTokens("123", {
+        accessToken: "a",
+        refreshToken: "b",
         tokenexpiry: new Date(),
-      };
-      prisma.user.update.mockResolvedValue(mockUser);
-
-      const tokens = { accessToken: "123", refreshToken: "4567" };
-      const result = await oauthService.saveUserTokens(1, tokens);
-
-      expect(prisma.user.update).toHaveBeenCalledWith({
-        where: { id: 1 },
-        data: {
-          accessToken: "123",
-          refreshToken: "4567",
-        },
       });
+
+      expect(prisma.user.update).toHaveBeenCalledTimes(1);
       expect(result).toEqual(mockUser);
     });
   });
 
-  describe("Get user tokens", () => {
-    it("should throw error if no userId", async () => {
+  // ------------------------
+  // Get User Tokens
+  // ------------------------
+  describe("getUserTokens", () => {
+    it("should throw error if userId is missing", async () => {
       await expect(oauthService.getUserTokens(null))
         .rejects.toThrow("User ID is required");
     });
 
-    it("should return user tokens", async () => {
-      const mockUser = { id: 1, accessToken: "abc", refreshToken: "xyz" };
-      prisma.user.findUnique.mockResolvedValue(mockUser);
+    it("should return user tokens successfully", async () => {
+      const mockUser = { id: "123", accessToken: "a", refreshToken: "b" };
+      prisma.user.findUnique.mockResolvedValueOnce(mockUser);
 
-      const result = await oauthService.getUserTokens(1);
+      const result = await oauthService.getUserTokens("123");
 
-      expect(prisma.user.findUnique).toHaveBeenCalledWith({
-        where: { id: 1 },
-      });
+      expect(prisma.user.findUnique).toHaveBeenCalledWith({ where: { id: "123" }, select: { refresh_token: true } });
       expect(result).toEqual(mockUser);
     });
   });

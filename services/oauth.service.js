@@ -1,5 +1,5 @@
 import axios from "axios";
-import { prisma } from "../../database/prisma.js";
+import { prisma } from "../database/prisma.js";
 
 
 const TL_AUTH_URL = "https://auth.truelayer.com";
@@ -50,6 +50,7 @@ export const oauthService = {
 
     //Saves tokens into DB for  later use
     async saveUserTokens(userId, tokens) {
+        if (!userId) throw new Error("User ID is required");
         const { access_token, refresh_token, expires_in } = tokens;
         return prisma.user.update({
             where: { id: userId },
@@ -62,6 +63,7 @@ export const oauthService = {
     },
 
     async getUserTokens(userId) {
+        if (!userId) throw new Error("User ID is required");
         return prisma.user.findUnique({
             where: { id: userId },
             select: { refresh_token: true },

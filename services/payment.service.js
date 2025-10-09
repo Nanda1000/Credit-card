@@ -6,21 +6,25 @@ export const paymentService = {async createPaymentRecord({ userId, cardId, amoun
 },
 
 async initiatePISP(paymentId) {
-    const providerResp = await pispService.createPayment({ paymentId });
+  if (!paymentId) throw new Error("Payment ID is required");
 
-    // Extract the redirect URL from TrueLayer response
-    const redirectUrl = providerResp.authorization_flow?.actions?.next?.uri;
+  const providerResp = await pispService.createPayment({ paymentId });
+  if (!providerResp || !providerResp.authorization_flow)
+    throw new Error("Invalid provider response");
 
-    await prisma.payment.update({
-      where: { id: paymentId },
-      data: {
-        providerPaymentId: providerResp.id,
-        redirectUrl,
-      },
-    });
+  const redirectUrl = providerResp.authorization_flow.actions?.next?.uri;
 
-    return { providerPaymentId: providerResp.id, redirectUrl };
-  },
+  await prisma.payment.update({
+    where: { id: paymentId },
+    data: {
+      providerPaymentId: providerResp.id,
+      redirectUrl,
+    },
+  });
+
+  return { providerPaymentId: providerResp.id, redirectUrl };
+},
+
 
 async getPaymentStatus(paymentId) {
     const payment = await prisma.payment.findUnique({ where: { id: paymentId } });
