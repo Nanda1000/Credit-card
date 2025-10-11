@@ -9,11 +9,13 @@ describe("OAuth Controller", () => {
   });
 
   beforeEach(async () => {
-    await prisma.payment.deleteMany();
-    await prisma.card.deleteMany();
-    await prisma.reminder.deleteMany();
-    await prisma.user.deleteMany();
-  });
+  // delete in the correct order (child → parent)
+  await prisma.payment.deleteMany();
+  await prisma.reminder.deleteMany();
+  await prisma.card.deleteMany();
+  await prisma.user.deleteMany();
+});
+
 
   afterAll(async () => {
     await prisma.$disconnect();
@@ -30,6 +32,7 @@ describe("OAuth Controller", () => {
 
   it("should redirect to TrueLayer", async () => {
     const { user } = await seedUserWithCard();
+
     const res = await request(app)
       .get(`/truelayer/${user.id}`);
 
@@ -45,15 +48,19 @@ describe("OAuth Controller", () => {
   });
 
   it("should refresh token for valid user", async () => {
-    const { user } = await seedUserWithCard({
-      refresh_token: "dummy_refresh_token",
+    const { user } = await seedUserWithCard();
+
+    // assign a dummy refresh token so the controller has something valid to use
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { refreshToken: "dummy_refresh_token" },
     });
 
     const res = await request(app)
       .get(`/truelayer/${user.id}/refreshtoken`)
       .set("user-id", user.id.toString());
 
-    // Mock response for now
+    // Allow 200 or 500 since the external API might fail in a dev setup
     expect([200, 500]).toContain(res.status);
   });
 });

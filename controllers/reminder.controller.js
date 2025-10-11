@@ -1,38 +1,59 @@
-import { reminder } from "../services/reminder.service";
-import { cardService } from "../services/card.service";
 
 
-//payment reminder
+import { cardService } from "../services/card.service.js";
+import { reminder } from "../services/reminder.service.js";
 
-export const paymentMake = async(req, res, next)=>{
-    try{
-        const {cardId, userId, dueDate, message, subject, email} = req.body;
-        const { bankName, cardType, cardNumber, limit, balance } = req.body;
-        
-        const card = await cardService.getCardById(cardId);
+// POST /reminders/:cardId
+export const paymentMake = async (req, res, next) => {
+  try {
+    const { cardId } = req.params; // ✅ Fix: from params, not body
+    const { userId, email, dueDate } = req.body;
 
-        if(!dueDate || !card) {
-            res.status(201).json({message: "There is no due data for this card or No card found under this details"})
-        }
-        await reminder.scheduleAllReminders(cardId, userId, email);
-        res.status(200).json({message: "Reminder scheduled successfully"});
-    }catch(err){
-        next(err);
+    // 1️⃣ Verify the card exists
+    const card = await cardService.getCardById(cardId);
+    if (!card) {
+      return res.status(404).json({ message: "Card not found" });
     }
+
+    // 2️⃣ Verify due date
+    if (!dueDate) {
+      return res.status(400).json({ message: "Due date is required" });
+    }
+
+    // 3️⃣ Schedule reminder
+    await reminder.scheduleAllReminders(cardId, userId, email);
+
+    res.status(200).json({
+      message: "Reminder scheduled successfully",
+      userId,
+      cardId,
+      email,
+    });
+  } catch (err) {
+    console.error("Controller Error:", err);
+    next(err);
+  }
 };
 
-//due date notification
+// GET /reminders/:cardId/dueDate
+export const dueDate = async (req, res, next) => {
+  try {
+    const { cardId } = req.params;
+    const { userId, email } = req.body;
 
-export const dueDate = async(req, res, next)=>{
-    try{
-        const {cardId, userId, email} = req.body;
-        const dueDate = await reminder.paymentDueDate(cardId, userId);
-        await reminder.sendReminderEmail(email, cardId, dueDate);
-        res.status(200).json({message: "Due date notification sent successfully"});
+    const dueDate = await reminder.paymentDueDate(cardId, userId);
+    await reminder.sendReminderEmail(email, cardId, dueDate);
 
-    }catch(err){
-        next(err);
-    }
+    res.status(200).json({
+      message: "Due date notification sent successfully",
+      id: cardId,
+      dueDate,
+      email,
+    });
+  } catch (err) {
+    console.error("Controller Error:", err);
+    next(err);
+  }
 };
 
 

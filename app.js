@@ -25,6 +25,8 @@ app.use((req, res, next) => {
 	next();
 });
 
+
+
 app.use(authRouter);
 app.use(router);
 app.use(cardRouter);
@@ -38,5 +40,6 @@ app.get("/", (req, res) => res.send("Backend Running"));
 if (process.env.NODE_ENV !== 'test') {
 	app.listen(5000, () => console.log("Server running"));
 }
+
 
 export default app;

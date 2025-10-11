@@ -23,8 +23,8 @@ export async function updateMyDetails(req, res) {
 // Delete account
 export async function deleteMyAccount(req, res) {
   try {
-    await userService.deleteUser(req.user.id);
-    res.status(204).send();
+    const deleted = await userService.deleteUser(req.user.id);
+    res.status(204).json(deleted);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

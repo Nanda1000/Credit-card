@@ -9,7 +9,6 @@ export async function seedUserWithCard() {
       accessToken: "tok",
       refreshToken: "ref",
       tokenexpiry: new Date(),
-      authUrl: "authUrl"
     },
   });
 
@@ -21,26 +20,33 @@ export async function seedUserWithCard() {
       displayName: "Seeded Card",
       creditLimit: 5000,
       availableBalance: 3749,
+      paymentDueDate: new Date("2025-12-25"),
     },
   });
 
   const payment = await prisma.payment.create({
     data: {
+      userId: user.id,
       cardId: card.id,
       amount: 5000,
       currency: 'GBP',
-      method: "redirect" || "pisp",
-      idempotencyKey,
-      providerPaymentId: 123,
       status: "success",
+      cardBank: "Barclays",
+      idempotencyKey: "test-idempotency-key",
+      redirectUrl: "https://example.com/redirect",
     },
   });
 
   const reminder = await prisma.reminder.create({
     data: {
+      userId: user.id,
       cardId: card.id,
-      dueDate: "12/25"
-    }
+      message: "Test reminder message",
+      dueDate: new Date("2025-12-25"),
+      reminderDate: new Date("2025-12-22"),
+      status: "Pending",
+      notifyVia: ["email"],
+    },
   });
 
   return { user, card, payment, reminder };

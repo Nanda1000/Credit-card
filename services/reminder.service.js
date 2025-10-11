@@ -53,7 +53,8 @@ export const reminder = {
     /**
      * Schedule reminder (store job in DB or push to queue)
      */
-    async scheduleAllReminders() {
+    async scheduleAllReminders(options = {}) {
+    // options: { everyOtherDay: boolean }
     // Step 1: Get all cards with dueDate
     const cards = await prisma.card.findMany({
         where: { paymentDueDate: { not: null } },
@@ -63,58 +64,40 @@ export const reminder = {
     // Step 2: Loop through cards
     for (const card of cards) {
         const dueDate = new Date(card.paymentDueDate);
-        const reminderOffsets = [-3, -1, 0, 1]; // 3d before, 1d before, same day, 1d after
+        // Determine offsets: default is 1 day before; if everyOtherDay is true, schedule [-3, -1, 1, 3]
+        const everyOtherDay = Boolean(options.everyOtherDay);
+        const offsets = everyOtherDay ? [-3, -1, 1, 3] : [-1];
 
-        for (const offset of reminderOffsets) {
+        for (const offset of offsets) {
             const reminderDate = new Date(dueDate);
-            if (reminderDate - dueDate >= 0) {
-                reminderDate.setDate(dueDate.getDate() + offset);
+            reminderDate.setDate(dueDate.getDate() + offset);
 
-                // Step 3: Avoid duplicates
-                const existing = await prisma.reminder.findFirst({
-                    where: { cardId: card.id, reminderDate },
-                });
-                if (existing) continue;
+            // Step 3: Avoid duplicates
+            const existing = await prisma.reminder.findFirst({
+                where: { cardId: card.id, reminderDate },
+            });
+            if (existing) continue;
 
-                // Step 4: Save reminder
-                await prisma.reminder.create({
-                    data: {
-                        userId: card.userId,
-                        cardId: card.id,
-                        dueDate,
-                        reminderDate,
-                        notifyVia: ["email"],
-                        sent: false,
-                    },
+            // Step 4: Save reminder
+            await prisma.reminder.create({
+                data: {
+                    userId: card.userId,
+                    cardId: card.id,
+                    dueDate,
+                    reminderDate,
+                    message: `Reminder for card ${card.displayName || card.id}`,
+                    notifyVia: ["email"],
+                    sent: false,
+                    status: "Pending", // required by enum ReminderStatus
+                },
                 });
-                // Send mail
+
+
+            // Choose email type: offsets after due date (offset > 0) -> overdue, otherwise due
+            if (offset > 0) {
                 await emailservice.sendOverdueEmail(card.user.email, dueDate);
-
-            }
-
-            else{
-                reminderDate.setDate(dueDate.getDate() + offset);
-
-                // Step 3: Avoid duplicates
-                const existing = await prisma.reminder.findFirst({
-                    where: { cardId: card.id, reminderDate },
-                });
-                if (existing) continue;
-
-                // Step 4: Save reminder
-                await prisma.reminder.create({
-                    data: {
-                        userId: card.userId,
-                        cardId: card.id,
-                        dueDate,
-                        reminderDate,
-                        notifyVia: ["email"],
-                        sent: false,
-                    },
-                });
-                // Send mail
+            } else {
                 await emailservice.sendDueEmail(card.user.email, dueDate);
-
             }
 
             console.log(

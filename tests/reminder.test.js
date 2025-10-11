@@ -1,6 +1,4 @@
-import { prisma } from "../database/prisma.js";
-import { reminder } from "../services/reminder.service.js";
-import * as emailservice from "../services/utils/email.service.js";
+
 
 jest.mock("../database/prisma.js", () => ({
   prisma: {
@@ -22,6 +20,10 @@ jest.mock("../services/utils/email.service.js", () => ({
   sendOverdueEmail: jest.fn(),
   sendDueEmail: jest.fn(),
 }));
+
+import { prisma } from "../database/prisma.js";
+import { reminder } from "../services/reminder.service.js";
+import * as emailservice from "../services/utils/email.service.js";
 
 describe("Reminder Service", () => {
   describe("paymentDueDate", () => {
@@ -72,8 +74,9 @@ describe("Reminder Service", () => {
 
       await reminder.scheduleAllReminders();
 
-      expect(prisma.card.findMany).toHaveBeenCalled();
+      expect(prisma.card.findMany).toHaveBeenCalledWith({where: { paymentDueDate: { not: null } },include: { user: true },});
       expect(prisma.reminder.create).toHaveBeenCalled();
+      expect(emailservice.sendDueEmail).toHaveBeenCalledTimes(1);
       expect(emailservice.sendDueEmail).toHaveBeenCalledWith("a@example.com", expect.anything());
     });
   });
